@@ -1,3 +1,5 @@
+use std::io::ErrorKind;
+
 use crate::cutils::string_from_ptr;
 use crate::system::time::Duration;
 
@@ -86,6 +88,17 @@ fn handle_message<C: Converser>(
                 .converser
                 .handle_hidden_prompt(&final_prompt)
                 .map(Some)
+                .map_err(|err| {
+                    if let PamError::IoError(err) = err {
+                        if let ErrorKind::TimedOut = err.kind() {
+                            PamError::Pam(PamErrorType::TimedOut)
+                        } else {
+                            PamError::Pam(PamErrorType::ConversationError)
+                        }
+                    } else {
+                        PamError::Pam(PamErrorType::ConversationError)
+                    }
+                })
         }
         ErrorMessage => app_data.converser.handle_error(msg).map(|()| None),
         TextInfo => app_data.converser.handle_info(msg).map(|()| None),
@@ -196,8 +209,10 @@ pub(super) unsafe extern "C" fn converse<C: Converser>(
             // send the conversation off to the Rust part
             // SAFETY: appdata_ptr contains the `*mut ConverserData` that is untouched by PAM
             let app_data = unsafe { &mut *(appdata_ptr as *mut ConverserData<C>) };
-            let Ok(resp_buf) = handle_message(app_data, style, &msg) else {
-                return PamErrorType::ConversationError;
+            let resp_buf = match handle_message(app_data, style, &msg) {
+                Ok(buf) => buf,
+                Err(PamError::Pam(err_type)) => return err_type,
+                _ => return PamErrorType::ConversationError,
             };
 
             resp_bufs.push(resp_buf);

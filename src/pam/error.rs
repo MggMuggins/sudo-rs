@@ -6,6 +6,9 @@ use super::sys::*;
 
 pub type PamResult<T, E = PamError> = Result<T, E>;
 
+// Returned by sudo-rs during pam conversation when the user didn't respond in time.
+const SUDO_PAM_TIMED_OUT: u32 = 100;
+
 // TODO: add missing doc-comments
 #[derive(PartialEq, Eq, Debug)]
 pub enum PamErrorType {
@@ -61,6 +64,8 @@ pub enum PamErrorType {
     // BadConstant // OpenPAM only
     // ConverseAgain // LinuxPAM only
     // Incomplete // LinuxPAM only
+    // The user did not respond in time.
+    TimedOut,
     UnknownErrorType(i32),
 }
 
@@ -105,6 +110,7 @@ impl PamErrorType {
             // PAM_BAD_CONSTANT => BadConstant,
             // PAM_CONV_AGAIN => ConverseAgain,
             // PAM_INCOMPLETE => Incomplete,
+            SUDO_PAM_TIMED_OUT => TimedOut,
             _ => UnknownErrorType(errno),
         }
     }
@@ -149,6 +155,7 @@ impl PamErrorType {
             // BadConstant => PAM_BAD_CONSTANT as libc::c_int,
             // ConverseAgain => PAM_CONV_AGAIN as libc::c_int,
             // Incomplete => PAM_INCOMPLETE as libc::c_int,
+            TimedOut => SUDO_PAM_TIMED_OUT as libc::c_int,
             UnknownErrorType(e) => *e,
         }
     }

@@ -103,6 +103,10 @@ pub(super) fn attempt_authenticate(
             // there was no error, so authentication succeeded
             Ok(_) => break,
 
+            Err(PamError::Pam(PamErrorType::TimedOut)) => {
+                return Err(Error::TimedOut);
+            }
+
             // maxtries was reached, pam does not allow any more tries
             Err(PamError::Pam(PamErrorType::MaxTries)) => {
                 return Err(Error::MaxAuthAttempts(current_try));

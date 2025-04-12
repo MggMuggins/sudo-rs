@@ -6,6 +6,8 @@ use std::{
     ptr::NonNull,
 };
 
+use crate::system::time::Duration;
+
 use converse::ConverserData;
 use error::pam_err;
 pub use error::{PamError, PamErrorType, PamResult};
@@ -50,6 +52,7 @@ impl PamContext {
         bell: bool,
         no_interact: bool,
         password_feedback: bool,
+        password_timeout: Option<Duration>,
         target_user: Option<&str>,
     ) -> PamResult<PamContext> {
         let converser = CLIConverser {
@@ -57,6 +60,7 @@ impl PamContext {
             name: converser_name.to_owned(),
             use_stdin,
             password_feedback,
+            password_timeout,
         };
 
         let c_service_name = CString::new(service_name)?;

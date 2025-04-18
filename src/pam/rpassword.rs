@@ -212,10 +212,12 @@ impl<'a> io::Read for TimeoutRead<'a> {
             None => -1,
         };
 
+        // SAFETY: pollfd is initialized and its length matches
         cerr(unsafe { libc::poll(pollfd.as_mut_ptr(), pollfd.len() as u64, timeout) })?;
 
         // There may yet be data waiting to be read even if POLLHUP is set.
         if pollfd[0].revents & (pollmask | libc::POLLHUP) > 0 {
+            // SAFETY: buf is initialized and its length matches
             let ret = cerr(unsafe {
                 libc::read(
                     self.fd.as_raw_fd(),

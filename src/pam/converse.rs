@@ -92,7 +92,7 @@ fn handle_message<C: Converser>(
                     dbg!(&err);
                     if let PamError::IoError(err) = err {
                         if let ErrorKind::TimedOut = err.kind() {
-                            return PamError::Pam(PamErrorType::TimedOut);
+                            return dbg!(PamError::Pam(PamErrorType::TimedOut));
                         }
                     }
 
@@ -210,7 +210,7 @@ pub(super) unsafe extern "C" fn converse<C: Converser>(
             let app_data = unsafe { &mut *(appdata_ptr as *mut ConverserData<C>) };
             let resp_buf = match handle_message(app_data, style, &msg) {
                 Ok(buf) => buf,
-                Err(PamError::Pam(err_type)) => return err_type,
+                Err(PamError::Pam(err_type)) => return dbg!(err_type),
                 _ => return PamErrorType::ConversationError,
             };
 

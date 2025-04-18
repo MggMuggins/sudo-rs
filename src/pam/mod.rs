@@ -155,7 +155,9 @@ impl PamContext {
         flags |= self.disallow_null_auth_token_flag();
 
         // SAFETY: `self.pamh` contains a correct handle (obtained from `pam_start`)
-        pam_err(unsafe { pam_authenticate(self.pamh, flags) })?;
+        dbg!(pam_err(dbg!(unsafe {
+            pam_authenticate(self.pamh, flags)
+        }))?);
 
         if self.has_panicked() {
             panic!("Panic during pam authentication");

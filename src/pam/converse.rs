@@ -89,15 +89,14 @@ fn handle_message<C: Converser>(
                 .handle_hidden_prompt(&final_prompt)
                 .map(Some)
                 .map_err(|err| {
+                    dbg!(&err);
                     if let PamError::IoError(err) = err {
                         if let ErrorKind::TimedOut = err.kind() {
-                            PamError::Pam(PamErrorType::TimedOut)
-                        } else {
-                            PamError::Pam(PamErrorType::ConversationError)
+                            return PamError::Pam(PamErrorType::TimedOut);
                         }
-                    } else {
-                        PamError::Pam(PamErrorType::ConversationError)
                     }
+
+                    PamError::Pam(PamErrorType::ConversationError)
                 })
         }
         ErrorMessage => app_data.converser.handle_error(msg).map(|()| None),

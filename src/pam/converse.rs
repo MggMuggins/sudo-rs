@@ -1,3 +1,5 @@
+use std::io::ErrorKind;
+
 use crate::cutils::string_from_ptr;
 use crate::system::time::Duration;
 
@@ -127,10 +129,20 @@ impl Converser for CLIConverser {
             tty.bell()?;
         }
         tty.prompt(msg)?;
-        if self.password_feedback {
-            Ok(tty.read_password_with_feedback(self.password_timeout)?)
+
+        let rslt = if self.password_feedback {
+            tty.read_password_with_feedback(self.password_timeout)
         } else {
-            Ok(tty.read_password(self.password_timeout)?)
+            tty.read_password(self.password_timeout)
+        };
+
+        // There is no way to pass a "timed out" error code through PAM, so at
+        // least give the user _some_ indication of what happened...
+        if let Err(ErrorKind::TimedOut) = rslt.as_ref().map_err(|err| err.kind()) {
+            tty.prompt("timed out")?;
+            Err(PamError::Pam(PamErrorType::MaxTries))
+        } else {
+            Ok(rslt?)
         }
     }
 

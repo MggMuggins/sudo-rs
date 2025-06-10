@@ -208,11 +208,13 @@ pub(super) unsafe extern "C" fn converse<C: Converser>(
             // send the conversation off to the Rust part
             // SAFETY: appdata_ptr contains the `*mut ConverserData` that is untouched by PAM
             let app_data = unsafe { &mut *(appdata_ptr as *mut ConverserData<C>) };
-            let Ok(resp_buf) = handle_message(app_data, style, &msg) else {
-                return PamErrorType::ConversationError;
+            match handle_message(app_data, style, &msg) {
+                Ok(resp_buf) => resp_bufs.push(resp_buf),
+                Err(PamError::Pam(PamErrorType::MaxTries)) => return PamErrorType::MaxTries,
+                _ => return PamErrorType::ConversationError,
             };
 
-            resp_bufs.push(resp_buf);
+            //resp_bufs.push(resp_buf);
         }
 
         // Allocate enough memory for the responses, which are initialized with zero.

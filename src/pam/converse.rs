@@ -139,7 +139,7 @@ impl Converser for CLIConverser {
         // There is no way to pass a "timed out" error code through PAM, so at
         // least give the user _some_ indication of what happened...
         if let Err(ErrorKind::TimedOut) = rslt.as_ref().map_err(|err| err.kind()) {
-            tty.prompt("timed out")?;
+            tty.prompt("\ntimed out\n")?;
             Err(PamError::Pam(PamErrorType::MaxTries))
         } else {
             Ok(rslt?)
